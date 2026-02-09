@@ -9,7 +9,9 @@ This is a fully local, real-time speech-to-speech translation system optimized f
 - **Real-time Processing**: Continuous audio capture and processing
 - **On-device Inference**: All AI models run locally without internet
 - **Arm Optimization**: Utilizes SME2/NEON instructions for better performance
-- **Multi-language Support**: Configurable target languages
+- **Multi-language Support**: 6+ languages including English, Spanish, French, German, Italian, Portuguese, and Tamil
+- **Hardware Integration**: Connect external kits via Serial, USB, Bluetooth, or WiFi
+- **Web Interface**: Modern Flask-based web application with real-time translation
 - **Low Latency**: Optimized for conversational use cases
 
 ## System Architecture
@@ -17,8 +19,9 @@ This is a fully local, real-time speech-to-speech translation system optimized f
 The pipeline consists of three main components:
 
 1. **Speech-to-Text (STT)**: Uses Faster-Whisper for accurate speech recognition
-2. **Translation Engine**: Handles language translation (currently supports English→Spanish)
+2. **Translation Engine**: Enhanced translation system supporting 6+ language pairs
 3. **Text-to-Speech (TTS)**: Converts translated text back to speech
+4. **Hardware Interface**: External kit integration via multiple connection methods
 
 ## Hardware Requirements
 
@@ -34,6 +37,11 @@ The pipeline consists of three main components:
 - faster-whisper for speech recognition
 - sounddevice for audio capture
 - numpy for audio processing
+
+### Web Interface Dependencies
+- Flask for web server
+- Flask-SocketIO for real-time communication
+- Web browser for interface access
 
 ### Optional Dependencies (for enhanced features)
 - llama-cpp-python for LLM-based translation
@@ -64,7 +72,15 @@ The pipeline consists of three main components:
 
 ## Usage
 
-### Basic Usage
+### Web Interface (Recommended)
+```bash
+# Start the web server
+python web_interface_simple.py
+
+# Access at: http://localhost:5000
+```
+
+### Command Line Usage
 ```bash
 python complete_pipeline.py --target-lang Spanish
 ```
@@ -73,10 +89,19 @@ python complete_pipeline.py --target-lang Spanish
 - `--target-lang`: Target language for translation (default: Spanish)
 - `--stt-size`: Whisper model size (tiny, small, base) (default: tiny)
 
+### Supported Languages
+- Spanish (Español)
+- French (Français)
+- German (Deutsch)
+- Italian (Italiano)
+- Portuguese (Português)
+- Tamil (தமிழ்)
+
 ### Example Commands
 ```bash
-# Translate to Spanish
-python complete_pipeline.py --target-lang Spanish
+# Translate to different languages
+python complete_pipeline.py --target-lang French
+python complete_pipeline.py --target-lang Tamil
 
 # Use larger model for better accuracy
 python complete_pipeline.py --stt-size small --target-lang Spanish
@@ -96,12 +121,18 @@ speech-to-speech-translator/
 │   └── pipeline/
 │       └── orchestrator.py    # Main pipeline coordinator
 ├── models/                    # Downloaded AI models
+├── src/                      # Core implementation modules
+├── templates/                # Web interface templates
 ├── main.py                   # Original entry point
 ├── complete_pipeline.py      # Complete working implementation
+├── web_interface_simple.py   # Web interface with hardware support
+├── enhanced_translator.py    # Multi-language translation engine
 ├── demo_simple.py            # Simplified demo
 ├── setup_models.py           # Model download script
+├── HARDWARE_CONNECTION_GUIDE.md # Hardware integration documentation
 ├── requirements.txt          # Original dependencies
 ├── requirements_windows.txt  # Windows-compatible dependencies
+├── requirements_web.txt      # Web interface dependencies
 ├── Dockerfile               # Docker configuration
 └── docker-compose.yml       # Docker compose setup
 ```
@@ -121,19 +152,28 @@ The system is optimized for Arm processors through:
 - Model size: "tiny" for fastest processing, "small" for better accuracy
 - Processing pipeline: Single-threaded to minimize context switching
 
+## Current Features
+
+✅ **Multi-language Support**: 6+ languages with comprehensive dictionaries
+✅ **Hardware Integration**: Ready for external kit connection via multiple methods
+✅ **Web Interface**: Modern, responsive web application
+✅ **Real-time Translation**: Instant translation with history tracking
+✅ **Cross-platform**: Works on Windows, Linux, and macOS
+✅ **Documentation**: Complete hardware and software guides
+
 ## Current Limitations
 
-1. **TTS Compatibility**: sherpa-onnx has installation issues on Windows
-2. **Translation Scope**: Currently limited to simple dictionary-based translation
-3. **Language Support**: Primarily tested with English→Spanish translation
+⚠️ **TTS Compatibility**: sherpa-onnx has installation issues on Windows
+⚠️ **Advanced Translation**: LLM-based translation requires additional setup
+⚠️ **Real Audio**: Hardware audio integration needs external components
 
 ## Future Improvements
 
 1. **Enhanced Translation**: Integrate full LLM-based translation when llama-cpp-python is available
 2. **Advanced TTS**: Implement proper neural TTS when compatible libraries are available
-3. **Additional Languages**: Expand translation capabilities to more language pairs
-4. **GUI Interface**: Add graphical user interface for easier operation
-5. **Mobile Deployment**: Package for Android/iOS deployment
+3. **Mobile Deployment**: Package for Android/iOS deployment
+4. **Performance Optimization**: Further Arm CPU optimizations
+5. **Extended Hardware Support**: Additional microcontroller platforms
 
 ## Troubleshooting
 
@@ -158,8 +198,17 @@ The system is optimized for Arm processors through:
 
 Run individual component tests:
 ```bash
-python demo_simple.py  # Test STT and basic functionality
-python verify_system.py  # Run full system verification
+# Test web interface
+python web_interface_simple.py
+
+# Test translation system
+python enhanced_translator.py
+
+# Test basic functionality
+python demo_simple.py
+
+# Run full system verification
+python verify_system.py
 ```
 
 ## Development Notes
