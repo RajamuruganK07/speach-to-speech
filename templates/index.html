@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real-Time Speech-to-Speech Translation</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <style>
+        :root {
+            --primary-color: #4a90e2;
+            --secondary-color: #f5f5f5;
+            --accent-color: #50c878;
+            --error-color: #e74c3c;
+            --text-color: #333;
+            --border-color: #ddd;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: var(--text-color);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: var(--primary-color);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+        
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            padding: 30px;
+        }
+        
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .panel {
+            background: var(--secondary-color);
+            border-radius: 10px;
+            padding: 25px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        .panel h2 {
+            color: var(--primary-color);
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--border-color);
+        }
+        
+        .input-group {
+            margin-bottom: 20px;
+        }
+        
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--text-color);
+        }
+        
+        .input-group select,
+        .input-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        
+        .input-group select:focus,
+        .input-group textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+        
+        .input-group textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+        
+        .btn {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn:hover {
+            background: #357abd;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+        
+        .btn:disabled {
+            background: #cccccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .btn-success {
+            background: var(--accent-color);
+        }
+        
+        .btn-success:hover {
+            background: #45a049;
+        }
+        
+        .btn-error {
+            background: var(--error-color);
+        }
+        
+        .result-box {
+            background: white;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+            min-height: 100px;
+            transition: all 0.3s;
+        }
+        
+        .result-box.success {
+            border-color: var(--accent-color);
+            background: #f0fff4;
+        }
+        
+        .result-box.error {
+            border-color: var(--error-color);
+            background: #fff5f5;
+        }
+        
+        .translation-result {
+            font-size: 18px;
+            line-height: 1.6;
+        }
+        
+        .original-text {
+            color: #666;
+            font-style: italic;
+            margin-bottom: 10px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .status-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        
+        .status-connected {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .status-disconnected {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .status-initializing {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        .history-item {
+            background: white;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 10px;
+        }
+        
+        .history-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-size: 14px;
+            color: #666;
+        }
+        
+        .history-content {
+            font-size: 16px;
+        }
+        
+        .history-original {
+            color: #666;
+            margin-bottom: 5px;
+        }
+        
+        .history-translated {
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+        
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 25px;
+            border-radius: 8px;
+            color: white;
+            font-weight: 600;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            transform: translateX(400px);
+            transition: transform 0.3s;
+            z-index: 1000;
+        }
+        
+        .notification.show {
+            transform: translateX(0);
+        }
+        
+        .notification.success {
+            background: var(--accent-color);
+        }
+        
+        .notification.error {
+            background: var(--error-color);
+        }
+        
+        .notification.info {
+            background: var(--primary-color);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🌐 Real-Time Speech Translation</h1>
+            <p>Translate speech instantly with on-device processing</p>
+            <div id="statusIndicator" class="status-indicator status-disconnected">
+                <span id="statusIcon">●</span>
+                <span id="statusText">Disconnected</span>
+            </div>
+        </div>
+        
+        <div class="main-content">
+            <div class="panel">
+                <h2><translation>Translate Text</h2>
+                
+                <div class="input-group">
+                    <label for="targetLanguage">Target Language:</label>
+                    <select id="targetLanguage">
+                        <option value="Spanish">Spanish</option>
+                        <option value="French">French</option>
+                        <option value="German">German</option>
+                        <option value="Italian">Italian</option>
+                        <option value="Portuguese">Portuguese</option>
+                    </select>
+                </div>
+                
+                <div class="input-group">
+                    <label for="inputText">Text to Translate:</label>
+                    <textarea id="inputText" placeholder="Enter text to translate..."></textarea>
+                </div>
+                
+                <button id="translateBtn" class="btn" onclick="translateText()">
+                    <span id="translateBtnText">Translate</span>
+                    <span id="translateBtnLoading" class="loading" style="display: none;"></span>
+                </button>
+                
+                <button id="initializeBtn" class="btn btn-success" onclick="initializeSystem()" style="margin-left: 10px;">
+                    Initialize System
+                </button>
+                
+                <div id="translationResult" class="result-box" style="display: none;">
+                    <div class="original-text" id="originalText"></div>
+                    <div class="translation-result" id="translatedText"></div>
+                </div>
+            </div>
+            
+            <div class="panel">
+                <h2>📜 Translation History</h2>
+                <div id="historyContainer">
+                    <p style="text-align: center; color: #666; padding: 20px;">
+                        No translations yet. Start translating to see history here.
+                    </p>
+                </div>
+                
+                <button class="btn" onclick="clearHistory()" style="margin-top: 15px;">
+                    Clear History
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <div id="notification" class="notification"></div>
+    
+    <script>
+        // Socket.IO connection
+        const socket = io();
+        let isConnected = false;
+        let isInitialized = false;
+        
+        // DOM Elements
+        const statusIndicator = document.getElementById('statusIndicator');
+        const statusIcon = document.getElementById('statusIcon');
+        const statusText = document.getElementById('statusText');
+        const translateBtn = document.getElementById('translateBtn');
+        const translateBtnText = document.getElementById('translateBtnText');
+        const translateBtnLoading = document.getElementById('translateBtnLoading');
+        const initializeBtn = document.getElementById('initializeBtn');
+        const translationResult = document.getElementById('translationResult');
+        const originalText = document.getElementById('originalText');
+        const translatedText = document.getElementById('translatedText');
+        const historyContainer = document.getElementById('historyContainer');
+        const notification = document.getElementById('notification');
+        
+        // Socket event handlers
+        socket.on('connect', function() {
+            isConnected = true;
+            updateStatus('connected', 'Connected');
+            showNotification('Connected to translation server', 'success');
+        });
+        
+        socket.on('disconnect', function() {
+            isConnected = false;
+            isInitialized = false;
+            updateStatus('disconnected', 'Disconnected');
+            showNotification('Disconnected from server', 'error');
+        });
+        
+        socket.on('initialization_result', function(data) {
+            if (data.success) {
+                isInitialized = true;
+                showNotification(data.message, 'success');
+                initializeBtn.disabled = true;
+                initializeBtn.textContent = 'System Ready';
+                initializeBtn.classList.remove('btn-success');
+            } else {
+                showNotification(data.message, 'error');
+            }
+        });
+        
+        socket.on('translation_result', function(data) {
+            handleTranslationResult(data);
+        });
+        
+        socket.on('translation_error', function(data) {
+            showNotification('Translation error: ' + data.error, 'error');
+            translateBtn.disabled = false;
+            translateBtnText.textContent = 'Translate';
+            translateBtnLoading.style.display = 'none';
+        });
+        
+        // Update connection status
+        function updateStatus(status, text) {
+            statusIndicator.className = 'status-indicator status-' + status;
+            statusText.textContent = text;
+        }
+        
+        // Initialize translation system
+        function initializeSystem() {
+            if (!isConnected) {
+                showNotification('Not connected to server', 'error');
+                return;
+            }
+            
+            socket.emit('initialize_system');
+            showNotification('Initializing translation system...', 'info');
+        }
+        
+        // Translate text
+        function translateText() {
+            if (!isConnected) {
+                showNotification('Not connected to server', 'error');
+                return;
+            }
+            
+            if (!isInitialized) {
+                showNotification('Please initialize the system first', 'error');
+                return;
+            }
+            
+            const inputText = document.getElementById('inputText').value.trim();
+            const targetLanguage = document.getElementById('targetLanguage').value;
+            
+            if (!inputText) {
+                showNotification('Please enter text to translate', 'error');
+                return;
+            }
+            
+            // Disable button and show loading
+            translateBtn.disabled = true;
+            translateBtnText.textContent = 'Translating...';
+            translateBtnLoading.style.display = 'inline-block';
+            
+            // Send translation request
+            socket.emit('translate_realtime', {
+                text: inputText,
+                target_language: targetLanguage
+            });
+        }
+        
+        // Handle translation result
+        function handleTranslationResult(data) {
+            if (data.error) {
+                showNotification('Error: ' + data.error, 'error');
+            } else {
+                // Show result
+                originalText.textContent = 'Original: ' + data.original;
+                translatedText.textContent = data.translated;
+                translationResult.className = 'result-box success';
+                translationResult.style.display = 'block';
+                
+                // Add to history
+                addToHistory(data);
+                
+                showNotification('Translation successful!', 'success');
+            }
+            
+            // Re-enable button
+            translateBtn.disabled = false;
+            translateBtnText.textContent = 'Translate';
+            translateBtnLoading.style.display = 'none';
+        }
+        
+        // Add translation to history
+        function addToHistory(data) {
+            const historyItem = document.createElement('div');
+            historyItem.className = 'history-item';
+            historyItem.innerHTML = `
+                <div class="history-header">
+                    <span>${new Date().toLocaleTimeString()}</span>
+                    <span>${data.target_language}</span>
+                </div>
+                <div class="history-content">
+                    <div class="history-original">${data.original}</div>
+                    <div class="history-translated">${data.translated}</div>
+                </div>
+            `;
+            
+            // Add to top of history
+            if (historyContainer.children.length === 1 && 
+                historyContainer.children[0].textContent.includes('No translations yet')) {
+                historyContainer.innerHTML = '';
+            }
+            
+            historyContainer.insertBefore(historyItem, historyContainer.firstChild);
+            
+            // Limit history to 20 items
+            while (historyContainer.children.length > 20) {
+                historyContainer.removeChild(historyContainer.lastChild);
+            }
+        }
+        
+        // Clear history
+        function clearHistory() {
+            historyContainer.innerHTML = `
+                <p style="text-align: center; color: #666; padding: 20px;">
+                    No translations yet. Start translating to see history here.
+                </p>
+            `;
+            showNotification('History cleared', 'info');
+        }
+        
+        // Show notification
+        function showNotification(message, type) {
+            notification.textContent = message;
+            notification.className = 'notification ' + type;
+            notification.classList.add('show');
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 3000);
+        }
+        
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            showNotification('Welcome to Speech Translation System!', 'info');
+        });
+    </script>
+</body>
+</html>

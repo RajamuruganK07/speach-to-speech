@@ -1,0 +1,14 @@
+# Web Interface Dependencies
+flask>=3.0.0
+flask-socketio>=5.3.0
+python-socketio>=5.7.0
+python-engineio>=4.4.0
+
+# Core dependencies (already installed)
+# sounddevice
+# numpy
+# faster-whisper (optional - for full STT)
+
+# For development
+# werkzeug
+# jinja2
