@@ -1,0 +1,19 @@
+# Audio Capture
+sounddevice
+numpy
+
+# Speech-to-Text
+faster-whisper
+# alternative: vosk
+
+# LLM / Translation
+# Note: For Arm devices, specific CMAKE_ARGS might be needed during install
+llama-cpp-python
+
+# Text-to-Speech
+# sherpa-onnx is good for edge, but requires model downloads
+sherpa-onnx
+soundfile
+
+# Utilities
+colorama

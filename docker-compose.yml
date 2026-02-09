@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  speech-translator:
+    build: .
+    container_name: speech-to-speech-translator
+    volumes:
+      - ./models:/app/models
+      - ./logs:/app/logs
+    ports:
+      - "8000:8000"
+    environment:
+      - PYTHONUNBUFFERED=1
+    devices:
+      - /dev/snd:/dev/snd  # For audio access
+    cap_add:
+      - SYS_PTRACE  # For debugging if needed
+    security_opt:
+      - seccomp:unconfined
+    stdin_open: true
+    tty: true

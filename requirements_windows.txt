@@ -1,0 +1,13 @@
+# Audio Capture and Processing
+sounddevice>=0.4.6
+soundfile>=0.12.1
+numpy>=1.24.0
+
+# Speech-to-Text
+faster-whisper>=1.0.0
+
+# Text-to-Speech (system-based fallback)
+# sherpa-onnx  # Commented out due to Windows compatibility issues
+
+# Utilities
+colorama>=0.4.6
